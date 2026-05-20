@@ -17,19 +17,21 @@ jobs:
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           $installerPath = "$env:TEMP\tailscale-setup.msi"
-          
           Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
-          Start-Process msiexec.exe -ArgumentList @("/i", $installerPath, "/quiet", "/norestart") -Wait -NoNewWindow
+          msiexec.exe /i $installerPath /quiet /norestart
+          Start-Sleep -Seconds 30
           
       - name: Connect to Tailscale
         run: |
           & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTHKEY }} --hostname=github-actions-vm
           
-      - name: Set RDP Password (Optional)
+      - name: Set RDP Password
         run: |
-          net user runneradmin "YourSecurePassword123!"
+          net user runneradmin "YourPassword123!"
           
       - name: Keep alive
         run: |
-          Write-Host "VM is running. RDP via Tailscale."
+          Write-Host "VM is running. Connect via Tailscale RDP to: github-actions-vm"
+          Write-Host "Username: runneradmin"
+          Write-Host "Password: YourPassword123!"
           Start-Sleep -Seconds 21600
