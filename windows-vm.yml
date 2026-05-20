@@ -1,0 +1,35 @@
+name: Setup Windows VM
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Enable RDP
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          
+      - name: Install Tailscale
+        run: |
+          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
+          $installerPath = "$env:TEMP\tailscale-setup.msi"
+          
+          Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
+          Start-Process msiexec.exe -ArgumentList @("/i", $installerPath, "/quiet", "/norestart") -Wait -NoNewWindow
+          
+      - name: Connect to Tailscale
+        run: |
+          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTHKEY }} --hostname=github-actions-vm
+          
+      - name: Set RDP Password (Optional)
+        run: |
+          net user runneradmin "YourSecurePassword123!"
+          
+      - name: Keep alive
+        run: |
+          Write-Host "VM is running. RDP via Tailscale."
+          Start-Sleep -Seconds 21600
